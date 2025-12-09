@@ -1,1 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOVYX — Real vs Objetivo</title>
+  <style>
+    :root{
+      --bg:#FFFFFF; --primary:#6A0DAD; --accent:#98FFDC; --dark:#222;
+    }
+    body{ margin:0; font-family: system-ui, Arial, sans-serif; background:var(--bg); color:var(--dark); }
+    .titulo{ background:var(--primary); padding:24px 32px; display:flex; align-items:center; }
+    .titulo h1{ margin:0; color:var(--accent); font-size:28px; letter-spacing:.5px; }
+    main{ max-width:960px; margin:0 auto; padding:24px; }
+    section{ border-radius:12px; padding:20px; margin:16px 0; }
+    .block{ background:#f7f7f9; border:1px solid #e8e8ee; }
+    .accent{ background:var(--primary); }
+    h2{ margin:0 0 12px; color:var(--primary); }
+    h3{ margin:12px 0 8px; color:#333; }
+    p{ margin:8px 0; color:#333; }
+    button{ background:var(--accent); color:var(--primary); border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; }
+    input,select{ width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin:8px 0 12px; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space:pre-wrap; word-break:break-word; background:#111; color:#e6e6e6; padding:12px; border-radius:10px; font-size:13px; }
+    .tag{ display:inline-block; padding:4px 8px; border-radius:999px; background:#eee; color:#333; font-size:12px; margin-right:6px; }
+    .muted{ color:#666; font-size:13px; }
+    .hidden{ display:none; }
+  </style>
+</head>
+<body>
+  <header class="titulo"><h1>SOVYX</h1></header>
+  <main>
 
+    <!-- Bienvenida / Login -->
+    <section id="entrada" class="block">
+      <h2>Bienvenida</h2>
+      <p class="muted">Entra con Instagram para activar.</p>
+      <div>
+        <button onclick="activarInstagram()">Entrar con Instagram</button>
+      </div>
+    </section>
+
+    <!-- Formulario de producto -->
+    <section id="formulario" class="block hidden">
+      <h2>Producto</h2>
+      <p class="muted">Solo productos entre 1.000 y 5.000 USD.</p>
+      <div>
+        <label>Nombre del producto</label>
+        <input id="prod_name" placeholder="Ej. LEGTS SaaS"/>
+        <label>Precio (USD)</label>
+        <input id="prod_price" type="number" min="1000" max="5000" placeholder="Ej. 2500"/>
+        <label>CTA</label>
+        <input id="prod_cta" placeholder="Ej. Reserva demo"/>
+        <label>Objetivo</label>
+        <input id="prod_goal" placeholder="Ej. 50 ventas en 30 días"/>
+        <button onclick="validarYCrearSesion()">Continuar</button>
+      </div>
+    </section>
+
+    <!-- Panel arquitecta -->
+    <section id="panel" class="block hidden">
+      <h2>Panel arquitecta</h2>
+      <p class="muted">Define audiencia high ticket y adjudica entrega 24h.</p>
+      <div class="grid">
+        <div>
+          <h3>Audiencia objetivo</h3>
+          <label>Tamaño</label>
+          <input id="aud_size" type="number" value="100000"/>
+          <label>Geo</label>
+          <input id="aud_geo" value="LATAM,USA"/>
+          <label>Tópicos</label>
+          <input id="aud_topics" value="negocios,software,finanzas"/>
+          <label>Ticket</label>
+          <div class="grid">
+            <div><input id="aud_min" type="number" value="1000"/></div>
+            <div><input id="aud_max" type="number" value="5000"/></div>
+          </div>
+          <button onclick="construirAudiencia()">Construir audiencia</button>
+        </div>
+        <div>
+          <h3>Adjudicación</h3>
+          <label>ID de media (Instagram)</label>
+          <input id="media_id" placeholder="Ej. 1790..."/>
+          <label>Ventana (horas)</label>
+          <input id="window_hours" type="number" value="24"/>
+          <label>Cierre objetivo (%)</label>
+          <div class="grid">
+            <div><input id="close_min" type="number" value="1"/></div>
+            <div><input id="close_max" type="number" value="10"/></div>
+          </div>
+          <button onclick="adjudicarEntrega()">Adjudicar 24h</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dashboard: real vs objetivo -->
+    <section id="dashboard" class="block hidden">
+      <h2>Dashboard</h2>
+      <div class="grid">
+        <div>
+          <h3>Instagram (datos reales)</h3>
+          <span class="tag">Perfil</span>
+          <div id="ig_perfil" class="mono">—</div>
+          <span class="tag">Medios</span>
+          <div id="ig_medios" class="mono">—</div>
+        </div>
+        <div>
+          <h3>IA SOVYX (datos objetivo)</h3>
+          <span class="tag">Audiencia adjudicada</span>
+          <div id="ia_audiencia" class="mono">—</div>
+          <span class="tag">Entrega 24h</span>
+          <div id="ia_entrega" class="mono">—</div>
+          <span class="tag">Telemetría</span>
+          <div id="ia_telemetria" class="mono">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Corrección -->
+    <section id="correccion" class="block hidden">
+      <h2>Corrección</h2>
+      <div id="correccion_body" class="mono">—</div>
+    </section>
+
+    <!-- Salida -->
+    <section class="block">
+      <button onclick="logout()">Salir</button>
+    </section>
+
+  </main>
+
+<script>
+/* =========================
+   Configuración
+========================= */
+const CONFIG = {
+  clientId: 'TU_APP_ID_INSTAGRAM', // reemplaza por tu App ID
+  redirectUri: 'https://TU_DOMINIO/sovyx.html', // debe coincidir con Meta
+  scopes: 'user_profile,user_media',
+  api: {
+    // Cambia estos endpoints a tu backend IA
+    createSession: '/api/sessions',
+    buildAudience: '/api/audience/build',
+    assignDelivery: '/api/delivery/assign',
+    telemetry: '/api/delivery/telemetry'
+  }
+};
+
+/* =========================
+   Login Instagram (Basic Display)
+========================= */
+function activarInstagram(){
+  const url = `https://api.instagram.com/oauth/authorize?client_id=${CONFIG.clientId}&redirect_uri=${encodeURIComponent(CONFIG.redirectUri)}&scope=${CONFIG.scopes}&response_type=token`;
+  window.location.href = url;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const hash = window.location.hash || '';
+  if (hash.includes('access_token=')) {
+    const token = new URLSearchParams(hash.substring(1)).get('access_token');
+    localStorage.setItem('sovyx_token', token);
+    document.getElementById('entrada').classList.add('hidden');
+    document.getElementById('formulario').classList.remove('hidden');
+    await cargarIGReal(token); // precarga datos reales
+  } else {
+    // si ya existe token guardado
+    const token = localStorage.getItem('sovyx_token');
+    if (token) {
+      document.getElementById('entrada').classList.add('hidden');
+      document.getElementById('formulario').classList.remove('hidden');
+      await cargarIGReal(token);
+    }
+  }
+});
+
+/* =========================
+   Datos reales de Instagram
+========================= */
+async function cargarIGReal(token){
+  try {
+    const perfil = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${token}`).then(r=>r.json());
+    const medios = await fetch(`https://graph.instagram.com/me/media?fields=id,caption,media_type,timestamp&access_token=${token}`).then(r=>r.json());
+
+    localStorage.setItem('sovyx_user_id', perfil.id || '');
+    localStorage.setItem('sovyx_username', perfil.username || '');
+
+    document.getElementById('ig_perfil').textContent = JSON.stringify(perfil, null, 2);
+    document.getElementById('ig_medios').textContent = JSON.stringify(medios, null, 2);
+  } catch(e){
+    document.getElementById('ig_perfil').textContent = 'Error cargando perfil';
+    document.getElementById('ig_medios').textContent = 'Error cargando medios';
+  }
+}
+
+/* =========================
+   Validación de producto y sesión
+========================= */
+function validarYCrearSesion(){
+  const name = document.getElementById('prod_name').value.trim();
+  const price = parseFloat(document.getElementById('prod_price').value);
+  const cta = document.getElementById('prod_cta').value.trim();
+  const goal = document.getElementById('prod_goal').value.trim();
+
+  if (!name || !cta || !goal) return alert('Completa nombre, CTA y objetivo');
+  if (isNaN(price) || price < 1000 || price > 5000) return alert('Solo productos entre 1.000 y 5.000 USD');
+
+  const payload = {
+    instagram_user_id: localStorage.getItem('sovyx_user_id'),
+    username: localStorage.getItem('sovyx_username'),
+    access_token: localStorage.getItem('sovyx_token'),
+    product: { name, price, cta, goal }
+  };
+
+  // Simula creación de sesión si aún no tienes backend:
+  localStorage.setItem('sovyx_session', 'sess_local_' + Date.now());
+
+  document.getElementById('formulario').classList.add('hidden');
+  document.getElementById('panel').classList.remove('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('correccion').classList.remove('hidden');
+
+  // Corrección inicial (reglas simples)
+  const corr = [];
+  if (price < 1500 && goal.includes('ventas')) corr.push('Eleva percepción de valor: reforzar prueba social y garantías.');
+  if (cta.toLowerCase().includes('demo')) corr.push('Complementa con CTA de cierre: “Reserva ahora” + límite de plazas.');
+  if (name.length < 6) corr.push('Nombre demasiado corto: potencia marca/beneficio.');
+  document.getElementById('correccion_body').textContent = corr.length ? corr.join('\n') : 'Perfil y oferta en curso: listo para adjudicar audiencia.';
+}
+
+/* =========================
+   Construir audiencia (IA objetivo)
+========================= */
+function construirAudiencia(){
+  const size = parseInt(document.getElementById('aud_size').value);
+  const geo = document.getElementById('aud_geo').value.split(',').map(s=>s.trim());
+  const topics = document.getElementById('aud_topics').value.split(',').map(s=>s.trim());
+  const ticket_min = parseInt(document.getElementById('aud_min').value);
+  const ticket_max = parseInt(document.getElementById('aud_max').value);
+
+  const audiencia = {
+    audience_id: 'aud_local_' + Date.now(),
+    size, geo, topics, ticket_min, ticket_max,
+    quality_score: 0.9
+  };
+
+  localStorage.setItem('sovyx_audience_id', audiencia.audience_id);
+  document.getElementById('ia_audiencia').textContent = JSON.stringify(audiencia, null, 2);
+}
+
+/* =========================
+   Adjudicar entrega 24h (IA objetivo)
+========================= */
+function adjudicarEntrega(){
+  const audience_id = localStorage.getItem('sovyx_audience_id');
+  if (!audience_id) return alert('Primero construye la audiencia');
+
+  const media_id = document.getElementById('media_id').value.trim();
+  const window_hours = parseInt(document.getElementById('window_hours').value);
+  const close_min = parseFloat(document.getElementById('close_min').value)/100;
+  const close_max = parseFloat(document.getElementById('close_max').value)/100;
+
+  const entrega = {
+    delivery_id: 'deliv_local_' + Date.now(),
+    status: 'scheduled',
+    media_id, audience_id, window_hours,
+    target: { reach_24h: 100000, closure_rate: { min: close_min, max: close_max } },
+    eta: new Date(Date.now() + window_hours*3600*1000).toISOString()
+  };
+
+  localStorage.setItem('sovyx_delivery_id', entrega.delivery_id);
+  document.getElementById('ia_entrega').textContent = JSON.stringify(entrega, null, 2);
+
+  // Telemetría inicial (objetivo)
+  const tele = {
+    delivered: 0,
+    projected_24h: 100000,
+    responses: 0,
+    closures_estimated: close_min + (close_max - close_min)/2,
+    recommendations: [
+      { action: 'boost_time', reason: 'ventana pico 18–22h' },
+      { action: 'segment_refine', reason: 'elevar intención B2B SaaS' }
+    ]
+  };
+  document.getElementById('ia_telemetria').textContent = JSON.stringify(tele, null, 2);
+}
+
+/* =========================
+   Utilidades
+========================= */
+function logout(){
+  localStorage.removeItem('sovyx_token');
+  localStorage.removeItem('sovyx_session');
+  localStorage.removeItem('sovyx_user_id');
+  localStorage.removeItem('sovyx_username');
+  localStorage.removeItem('sovyx_audience_id');
+  localStorage.removeItem('sovyx_delivery_id');
+  location.href = location.pathname; // recargar limpio
+}
+</script>
+</body>
+</html>
